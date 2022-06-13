@@ -106,20 +106,8 @@ function Send-TeamsMessage {
 #endregion
 
 #region find any scripts created in the last 24 hours
-
-#region Look at all "PowerShell" create events
-$alertFilter = "?`$filter=(activityOperationType eq 'Create' and activityType eq 'createDeviceManagementScript DeviceManagementScript')"
-
-$params = @{
-    Method      = "Get"
-    Uri         = "$($baseUri)$alertFilter"
-    Headers     = $header
-    ContentType = 'Application/Json'
-}
-$result = Invoke-RestMethod @params
-#endregion
-
 #region show me scripts added by the intern in the last day
+Write-Output "Looking at all scripts made in the last 24 hours.."
 $dateRange = [datetime]::now.AddDays(-1).ToUniversalTime().ToString("yyyy-MM-dd")
 $alertFilter = "?`$filter=(activityOperationType eq 'Create' and activityType eq 'createDeviceManagementScript DeviceManagementScript' and activityDateTime gt $dateRange)"
 $params = @{
@@ -152,7 +140,7 @@ foreach ($script in $naughtyScript) {
     $ctx = New-AzStorageContext -ConnectionString $env:AzureWebJobsStorage
     Write-Output "Getting storage container.. $($env:AZURE_CONTAINER)"
     $container = (Get-AzStorageContainer -Name $env:AZURE_CONTAINER -Context $ctx).CloudBlobContainer
-    Write-Output "uploading file.."
+    Write-Output "Uploading file.."
     $rParams = @{
         File      = $tempFile
         Blob      = $scriptContent.fileName
@@ -162,7 +150,7 @@ foreach ($script in $naughtyScript) {
     }
     $result = Set-AzStorageBlobContent @rParams
     $result | Format-List
-    Write-Output "sending teams notif.."
+    Write-Output "Sending teams notif.."
     $tParams = @{
         ActorUpn          = $script.actor.userPrincipalName
         ScriptDisplayName = $scriptContent.displayName
@@ -174,7 +162,6 @@ foreach ($script in $naughtyScript) {
 }
 #endregion
 #endregion
-
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
